@@ -1,6 +1,7 @@
 package com.shinelon.coolweather.fragment;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.shinelon.coolweather.R;
+import com.shinelon.coolweather.WeatherActivity;
 import com.shinelon.coolweather.db.City;
 import com.shinelon.coolweather.db.County;
 import com.shinelon.coolweather.db.Province;
@@ -58,6 +60,8 @@ public class ChooseAreaFragment extends Fragment {
     //当前选中的级别
     private int currentLevel;
 
+    public static final String TAG = "汤振涛";
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -83,6 +87,12 @@ public class ChooseAreaFragment extends Fragment {
                 }else if (currentLevel == LEVEL_CITY){
                     selectedCity = cityList.get(i);
                     queryCounties();
+                }else if (currentLevel == LEVEL_COUNTY){
+                    String weatherId = countyList.get(i).getWeatherId();
+                    Log.i(TAG+"当前点击县名字",countyList.get(i).getCountyName()+" ----- "+weatherId);
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id", weatherId);
+                    startActivity(intent);
                 }
             }
         });
@@ -155,7 +165,7 @@ public class ChooseAreaFragment extends Fragment {
         if (countyList.size() > 0){
             dataList.clear();
             for (County county : countyList){
-                Log.i("市内所有的县", county.getCountyName());
+                Log.i(TAG+"市内所有的县", county.getCountyName());
                 dataList.add(county.getCountyName());
             }
             adapter.notifyDataSetChanged();
@@ -165,7 +175,7 @@ public class ChooseAreaFragment extends Fragment {
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
             String address = "http://guolin.tech/api/china/" + provinceCode + "/" + cityCode;
-            Log.i("县的查询", address);
+            Log.i(TAG+"县的查询", address);
             queryFromServer(address, "county");
         }
     }
@@ -174,10 +184,12 @@ public class ChooseAreaFragment extends Fragment {
      * 根据传入的地址和类型从服务器上查询省市县数据
      */
     private void queryFromServer(String address, final  String type){
+        Log.i(TAG+"查询数据", "url" + address + "type：" + type);
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.i(TAG+"查询失败", e.toString());
                 //通过runOnUiThread()回到主线程处理逻辑
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -191,13 +203,15 @@ public class ChooseAreaFragment extends Fragment {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responeText = response.body().string();
+                Log.i(TAG+"查询成功", responeText);
                 boolean result = false;
                 if ("province".equals(type)){
-                    result = Utility.handleProvinceRespone(responeText);
+                    result = Utility.handleProvinceResponse(responeText);
                 }else if ("city".equals(type)){
-                    result = Utility.handleCityRespone(responeText, selectedProvince.getId());
+                    result = Utility.handleCityResponse(responeText, selectedProvince.getId());
                 }else if ("county".equals(type)){
-                    result = Utility.handleCountyRespone(responeText, selectedCity.getId());
+                    result = Utility.handleCountyResponse(responeText, selectedCity.getId());
+                    Log.i(TAG+"查询县成功", result + "   "+selectedCity.getId());
                 }
                 if (result){
                     getActivity().runOnUiThread(new Runnable() {
@@ -227,6 +241,7 @@ public class ChooseAreaFragment extends Fragment {
             dialog.setMessage("正在加载...");
             dialog.setCanceledOnTouchOutside(false);
         }
+        dialog.show();
     }
 
     /**
