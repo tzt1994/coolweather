@@ -21,10 +21,16 @@
         </activity>
         <activity android:name=".WeatherActivity">
             <intent-filter>
-                <action android:name="com.shinelon.coolweather.WEATHER"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="com.shinelon.coolweather.WEATHER" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".service.AutoUpdateService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
